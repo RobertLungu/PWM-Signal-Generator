@@ -1,5 +1,3 @@
-// counter.v: Num?r?tor de 16 bi?i cu Prescaler
-// Contorul principal se incrementeaza/decrementeaza la 2^PRESCALE cicli de ceas.
 module counter (
     // peripheral clock signals
     input clk,
@@ -13,21 +11,13 @@ module counter (
     input[7:0] prescale
 );
 
-    // Contorul intern al prescaler-ului (8 biti latime)
     reg [7:0] prescale_cnt;
-    
-    // Registru pentru valoarea contorului principal
     reg [15:0] counter_val_reg; 
     assign count_val = counter_val_reg;
-    
-    // Semnal de tick: activ cand contorul principal trebuie sa se schimbe.
     wire counter_tick;
-    
-    // Valoarea la care prescale_cnt se reseteaza (2^PRESCALE - 1)
     reg [7:0] prescale_limit;
-    
-    // Logica de calcul a limitei prescaler (combinationala)
-    // PRESCALE=0 -> limit=0; PRESCALE=1 -> limit=1; PRESCALE=2 -> limit=3, etc.
+
+//Common prescale limit logic
     always @(*) begin
         case (prescale)
             8'd0: prescale_limit = 8'd0; 
@@ -38,11 +28,11 @@ module counter (
             8'd5: prescale_limit = 8'd31;
             8'd6: prescale_limit = 8'd63;
             8'd7: prescale_limit = 8'd127;
-            default: prescale_limit = 8'hFF; // Pentru prescale >= 8 (max 255)
+            default: prescale_limit = 8'hFF; // prescale >= 8 (max 255)
         endcase
     end
     
-    // Logica Prescaler (secventiala)
+    // Prescaler logic (8-bit, sequential)
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             prescale_cnt <= 8'h00;
@@ -52,30 +42,28 @@ module counter (
             else
                 prescale_cnt <= prescale_cnt + 8'h01; // Increment
         end else begin
-            prescale_cnt <= 8'h00; // Oprim/resetam cand e dezactivat
+            prescale_cnt <= 8'h00; 
         end
     end
     
-    // Tick-ul apare in ciclul in care prescale_cnt a atins limita
     assign counter_tick = en && (prescale_cnt == prescale_limit);
 
-    // Logica Contor Principal (16-bit, secventiala)
+    // Main Counter Logic (16-bit, sequential)
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             counter_val_reg <= 16'h0000;
         end else if (count_reset) begin
-            // COUNTER_RESET reseteaza starea num?r?torului la 0
             counter_val_reg <= 16'h0000; 
-        end else if (en && counter_tick) begin // Contorul se schimba doar la tick
-            if (upnotdown) begin // UP (Incrementare)
+        end else if (en && counter_tick) begin 
+            if (upnotdown) begin // UP (Increment)
                 if (counter_val_reg == period) begin
-                    counter_val_reg <= 16'h0000; // Overflow: revine la 0
+                    counter_val_reg <= 16'h0000; 
                 end else begin
                     counter_val_reg <= counter_val_reg + 16'h0001;
                 end
-            end else begin // DOWN (Decrementare)
+            end else begin // DOWN (Decrement)
                 if (counter_val_reg == 16'h0000) begin
-                    counter_val_reg <= period; // Underflow: revine la PERIOD
+                    counter_val_reg <= period; // Underflow
                 end else begin
                     counter_val_reg <= counter_val_reg - 16'h0001;
                 end

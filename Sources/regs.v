@@ -1,5 +1,3 @@
-// regs.v: Blocul de registri de configurare
-// Adresare pe byte. Gestioneaza R/W si auto-reset.
 module regs (
     // peripheral clock signals
     input clk,
@@ -24,7 +22,6 @@ module regs (
     output[15:0] compare2
 );
 
-    // Registri interni
     reg [15:0] period_reg;
     reg counter_en_reg; 
     reg [15:0] compare1_reg;
@@ -34,7 +31,6 @@ module regs (
     reg pwm_en_reg;         
     reg [1:0] functions_reg; 
     
-    // Iesiri (asigned din registrii interni)
     assign period = period_reg;
     assign en = counter_en_reg;
     assign compare1 = compare1_reg;
@@ -42,27 +38,25 @@ module regs (
     assign prescale = prescale_reg;
     assign upnotdown = upnotdown_reg;
     assign pwm_en = pwm_en_reg;
-    assign functions = {6'h00, functions_reg}; // FUNCTIONS este pe 2 biti, dar bus-ul e 8
+    assign functions = {6'h00, functions_reg}; // FUNCTIONS is 2 bits wide but output is 8 bits
 
-    // Logica pentru COUNTER_RESET (Adresa 0x07, Write only, auto-clearing)
-    reg [1:0] counter_reset_cnt; // Contor 2 cicluri (00 -> 01 -> 10 -> 11 -> 00)
+    reg [1:0] counter_reset_cnt; // Counter(00 -> 01 -> 10 -> 11 -> 00)
     
-    // Iesirea COUNTER_RESET este activa in ciclurile 1 si 2 (din 4 stari)
+    // COUNTER_RESET output is active in cycles 1 and 2 (out of 4 states)
     assign count_reset = (counter_reset_cnt == 2'b01) || (counter_reset_cnt == 2'b10); 
 
-    // Logica COUNTER_RESET (secventiala)
+    // COUNTER_RESET logic (sequential)
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             counter_reset_cnt <= 2'b00;
-        end else if (write && (addr == 6'h07)) begin // Write la COUNTER_RESET (0x07)
-            counter_reset_cnt <= 2'b01; // Incepe numaratoarea (activ in urmatorul ciclu)
+        end else if (write && (addr == 6'h07)) begin // Write to COUNTER_RESET (0x07)
+            counter_reset_cnt <= 2'b01; // Start counting (active in next cycle)
         end else if (counter_reset_cnt != 2'b00) begin
-            // Numararea starii: 01 -> 10 -> 11 -> 00
             counter_reset_cnt <= counter_reset_cnt + 2'b01;
         end
     end
     
-    // Logica de scriere pentru toti registrii (secventiala)
+    // Write logic for all registers (sequential)
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             period_reg <= 16'h0000;
@@ -74,7 +68,6 @@ module regs (
             pwm_en_reg <= 1'b0;
             functions_reg <= 2'b00;
         end else if (write) begin
-            // Adresarea este pe byte
             case (addr)
                 6'h00: period_reg[7:0] <= data_write;       // PERIOD LSB
                 6'h01: period_reg[15:8] <= data_write;      // PERIOD MSB
@@ -83,23 +76,22 @@ module regs (
                 6'h04: compare1_reg[15:8] <= data_write;    // COMPARE1 MSB
                 6'h05: compare2_reg[7:0] <= data_write;     // COMPARE2 LSB
                 6'h06: compare2_reg[15:8] <= data_write;    // COMPARE2 MSB
-                // 0x07: COUNTER_RESET (W only) - tratat separat
+                // 0x07: COUNTER_RESET (W only)
                 // 0x08, 0x09: COUNTER_VAL (R only)
                 6'h0A: prescale_reg <= data_write;          // PRESCALE (8 bit)
                 6'h0B: upnotdown_reg <= data_write[0];      // UPNOTDOWN (1 bit)
                 6'h0C: pwm_en_reg <= data_write[0];         // PWM_EN (1 bit)
-                6'h0D: functions_reg <= data_write[1:0];    // FUNCTIONS (2 biti)
-                default: ; // Orice alta adresa este ignorata
+                6'h0D: functions_reg <= data_write[1:0];    // FUNCTIONS (2 bits)
+                default: ; 
             endcase
         end
     end
 
-    // Logica de citire (combinationala)
     reg [7:0] data_read_reg;
     assign data_read = data_read_reg;
 
     always @(*) begin
-        data_read_reg = 8'h00; // Valoare implicita (returneaza 0 pentru adrese nevalide/neimplementate)
+        data_read_reg = 8'h00; // Default value (returns 0 for invalid/unimplemented addresses)
         
         if (read) begin
             case (addr)
@@ -117,7 +109,7 @@ module regs (
                 6'h0B: data_read_reg = {7'h00, upnotdown_reg};
                 6'h0C: data_read_reg = {7'h00, pwm_en_reg};
                 6'h0D: data_read_reg = {6'h00, functions_reg};
-                default: data_read_reg = 8'h00; // Adresa neimplementata
+                default: data_read_reg = 8'h00; // Unimplemented address
             endcase
         end
     end
