@@ -1,0 +1,14 @@
+# compile verilog/system verilog design source files
+verilog xil_defaultlib  \
+"../../../../code/counter.v" \
+"../../../../code/instr_dcd.v" \
+"../../../../code/pwm_gen.v" \
+"../../../../code/regs.v" \
+"../../../../code/spi_bridge.v" \
+"../../../../code/top.v" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort

@@ -1,0 +1,8 @@
+INFO: [VRFC 10-2263] Analyzing Verilog file "C:/Users/lungu/OneDrive/Documents/Vivado/ACLabs/Proiect/code/top.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module top
+WARNING: [VRFC 10-9336] redeclaration of ANSI port 'clk' is not allowed [C:/Users/lungu/OneDrive/Documents/Vivado/ACLabs/Proiect/code/top.v:18]
+WARNING: [VRFC 10-9336] redeclaration of ANSI port 'rst_n' is not allowed [C:/Users/lungu/OneDrive/Documents/Vivado/ACLabs/Proiect/code/top.v:19]
+WARNING: [VRFC 10-9336] redeclaration of ANSI port 'sclk' is not allowed [C:/Users/lungu/OneDrive/Documents/Vivado/ACLabs/Proiect/code/top.v:21]
+WARNING: [VRFC 10-9336] redeclaration of ANSI port 'cs_n' is not allowed [C:/Users/lungu/OneDrive/Documents/Vivado/ACLabs/Proiect/code/top.v:22]
+WARNING: [VRFC 10-9336] redeclaration of ANSI port 'miso' is not allowed [C:/Users/lungu/OneDrive/Documents/Vivado/ACLabs/Proiect/code/top.v:23]
+WARNING: [VRFC 10-9336] redeclaration of ANSI port 'mosi' is not allowed [C:/Users/lungu/OneDrive/Documents/Vivado/ACLabs/Proiect/code/top.v:24]
