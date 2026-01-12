@@ -13,16 +13,15 @@ module instr_dcd (
     input[7:0] data_read,
     output[7:0] data_write
 );
-
     localparam SETUP_PHASE = 1'b0;
     localparam DATA_PHASE  = 1'b1;
 
-    reg state;          
+    reg state = SETUP_PHASE;          
     reg next_state;    
     
-    reg setup_write;    // Bit 7: 1=Write, 0=Read.
-    reg setup_high_low; // Bit 6: 1=MSB (High), 0=LSB (Low).
-    reg [5:0] setup_addr; // Biti 5:0: Adresa de baza
+    reg setup_write = 1'b0;    // Bit 7: 1=Write, 0=Read.
+    reg setup_high_low = 1'b0; // Bit 6: 1=MSB (High), 0=LSB (Low).
+    reg [5:0] setup_addr = 6'h00; // Biti 5:0: Adresa de baza
     
     reg read_reg;
     reg write_reg;
@@ -37,16 +36,19 @@ module instr_dcd (
 
     // FSM State Register
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n)
+        if (!rst_n) begin
             state <= SETUP_PHASE;
-        else
+            setup_addr     <= 6'h00;
+            setup_high_low <= 1'b0;
+            setup_write    <= 1'b0;
+        end else begin
             state <= next_state;
+        end
     end
     
     // FSM Next State Logic & Output Control
     always @(*) begin
         next_state = state;
-        
         // Default initializations
         read_reg = 1'b0;
         write_reg = 1'b0;
@@ -56,30 +58,23 @@ module instr_dcd (
         case (state)
             SETUP_PHASE: begin
                 addr_reg = setup_addr + setup_high_low;
-
                 if (byte_sync) begin
                     setup_write    = data_in[7];
                     setup_high_low = data_in[6];
                     setup_addr     = data_in[5:0];
-                    
-                    addr_reg = setup_addr + setup_high_low;
-                    
-                    if (setup_write) begin // Write (Bit 7 = 1)
-                        next_state = DATA_PHASE;
-                    end else begin // Read (Bit 7 = 0)
-                        read_reg = 1'b1; 
+                    addr_reg = data_in[5:0] + data_in[6]; 
+                    if (setup_write) next_state = DATA_PHASE;// Write (Bit 7 = 1)
+                    else begin // Read (Bit 7 = 0)
+                        read_reg = 1'b1;
                         next_state = SETUP_PHASE;
                     end
                 end
             end
-            
             DATA_PHASE: begin
                 addr_reg = setup_addr + setup_high_low;
                 if (byte_sync) begin
                     data_write_reg = data_in;
-                    
                     write_reg = 1'b1;
-                    
                     next_state = SETUP_PHASE; 
                 end
             end

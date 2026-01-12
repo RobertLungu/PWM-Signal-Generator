@@ -11,3 +11,5 @@ A couple general peculiarities of the code is a slight excesive use of reg stand
 "assign variable=variable_reg"
 
 top.v although initially requested not to be modified had to be changed in a few places such as swapping the I/O status of the mosi and miso to their correct states and adding a couple wires the the module call sequences
+
+1.4 - 2 things were really changed, formatting because one of us uses a different formatter, and some initializations because we forgot, now it should work fine

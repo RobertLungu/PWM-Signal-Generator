@@ -12,8 +12,7 @@ module pwm_gen (
     // top facing signals
     output pwm_out
 );
-
-    reg pwm_out_reg;
+    reg pwm_out_reg = 1'b0;
     assign pwm_out = pwm_out_reg;
 
     wire compare1_match = (count_val == compare1);
@@ -28,40 +27,23 @@ module pwm_gen (
 
     // PWM Output Logic
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            pwm_out_reg <= 1'b0;
-        end else if (!pwm_en) begin
-            pwm_out_reg <= pwm_out_reg; 
-        end else begin
-            
+        if (!rst_n) pwm_out_reg <= 1'b0;
+        else if (!pwm_en) pwm_out_reg <= pwm_out_reg;
+        else begin
             if (is_aligned) begin
-                // Mode Aligned
-                
-                if (compare1_match) begin
-                    pwm_out_reg <= ~pwm_out_reg;
-                end 
+                // Mode Aligned   
+                if (compare1_match) pwm_out_reg <= ~pwm_out_reg;
                 else if (period_match || zero_match) begin
-                    if (is_left_aligned) begin 
-                        // Left Aligned Starts HIGH (1)
-                        pwm_out_reg <= 1'b1; 
-                    end else if (is_right_aligned) begin 
-                        // Right Aligned: Starts LOW (0)
-                        pwm_out_reg <= 1'b0; 
-                    end
+                    if (is_left_aligned) pwm_out_reg <= 1'b1;  // Left Aligned Starts HIGH (1)
+                    else if (is_right_aligned) pwm_out_reg <= 1'b0;  // Right Aligned: Starts LOW (0)
                 end
             end 
             else if (is_non_aligned) begin
                 // Mode Non-Aligned - Starts 0, goes 1 at C1, returns 0 at C2
-                
-                if (compare1_match) begin
-                    pwm_out_reg <= 1'b1; 
-                end else if (compare2_match) begin
-                    pwm_out_reg <= 1'b0; 
-                end else if (zero_match) begin
-                    pwm_out_reg <= 1'b0;
-                end
+                if (compare1_match) pwm_out_reg <= 1'b1;
+                else if (compare2_match) pwm_out_reg <= 1'b0;
+                else if (zero_match) pwm_out_reg <= 1'b0;
             end
         end
     end
-
 endmodule

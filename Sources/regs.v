@@ -21,7 +21,6 @@ module regs (
     output[15:0] compare1,
     output[15:0] compare2
 );
-
     reg [15:0] period_reg;
     reg counter_en_reg; 
     reg [15:0] compare1_reg;
@@ -29,8 +28,8 @@ module regs (
     reg [7:0] prescale_reg; 
     reg upnotdown_reg;      
     reg pwm_en_reg;         
-    reg [1:0] functions_reg; 
-    
+    reg [1:0] functions_reg;
+
     assign period = period_reg;
     assign en = counter_en_reg;
     assign compare1 = compare1_reg;
@@ -41,32 +40,29 @@ module regs (
     assign functions = {6'h00, functions_reg}; // FUNCTIONS is 2 bits wide but output is 8 bits
 
     reg [1:0] counter_reset_cnt; // Counter(00 -> 01 -> 10 -> 11 -> 00)
-    
+
     // COUNTER_RESET output is active in cycles 1 and 2 (out of 4 states)
     assign count_reset = (counter_reset_cnt == 2'b01) || (counter_reset_cnt == 2'b10); 
 
     // COUNTER_RESET logic (sequential)
     always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            counter_reset_cnt <= 2'b00;
-        end else if (write && (addr == 6'h07)) begin // Write to COUNTER_RESET (0x07)
-            counter_reset_cnt <= 2'b01; // Start counting (active in next cycle)
-        end else if (counter_reset_cnt != 2'b00) begin
-            counter_reset_cnt <= counter_reset_cnt + 2'b01;
-        end
+        if (!rst_n) counter_reset_cnt <= 2'b00;
+        else if (write && (addr == 6'h07)) counter_reset_cnt <= 2'b01; 
+        else if (counter_reset_cnt != 2'b00) counter_reset_cnt <= counter_reset_cnt + 2'b01;
     end
     
     // Write logic for all registers (sequential)
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            period_reg <= 16'h0000;
-            counter_en_reg <= 1'b0;
-            compare1_reg <= 16'h0000;
-            compare2_reg <= 16'h0000;
-            prescale_reg <= 8'h00;
-            upnotdown_reg <= 1'b1; // Default UP
-            pwm_en_reg <= 1'b0;
-            functions_reg <= 2'b00;
+            // THIS is the bulk pf 1.4 changes
+            period_reg     <= 16'h0020; // Perioada 32 (sa aiba ce numara)
+            counter_en_reg <= 1'b1;     // Pornim numaratorul direct din Reset
+            compare1_reg   <= 16'h000A; // Compare la 10
+            compare2_reg   <= 16'h0014; // Compare la 20
+            prescale_reg   <= 8'h00;    // Viteza maxima
+            upnotdown_reg  <= 1'b1;     // Numara in sus
+            pwm_en_reg     <= 1'b1;     // PWM Pornit
+            functions_reg  <= 2'b00;
         end else if (write) begin
             case (addr)
                 6'h00: period_reg[7:0] <= data_write;       // PERIOD LSB
@@ -82,17 +78,17 @@ module regs (
                 6'h0B: upnotdown_reg <= data_write[0];      // UPNOTDOWN (1 bit)
                 6'h0C: pwm_en_reg <= data_write[0];         // PWM_EN (1 bit)
                 6'h0D: functions_reg <= data_write[1:0];    // FUNCTIONS (2 bits)
-                default: ; 
+                default: ;
             endcase
         end
     end
 
+    // Read Logic
     reg [7:0] data_read_reg;
     assign data_read = data_read_reg;
 
     always @(*) begin
         data_read_reg = 8'h00; // Default value (returns 0 for invalid/unimplemented addresses)
-        
         if (read) begin
             case (addr)
                 6'h00: data_read_reg = period_reg[7:0];
@@ -102,7 +98,7 @@ module regs (
                 6'h04: data_read_reg = compare1_reg[15:8];
                 6'h05: data_read_reg = compare2_reg[7:0];
                 6'h06: data_read_reg = compare2_reg[15:8];
-                6'h07: data_read_reg = 8'h00; // COUNTER_RESET (W only)
+                6'h07: data_read_reg = 8'h00; // COUNTER_RESET is Write Only
                 6'h08: data_read_reg = counter_val[7:0]; // COUNTER_VAL LSB (R only)
                 6'h09: data_read_reg = counter_val[15:8]; // COUNTER_VAL MSB (R only)
                 6'h0A: data_read_reg = prescale_reg;
@@ -113,5 +109,4 @@ module regs (
             endcase
         end
     end
-
 endmodule

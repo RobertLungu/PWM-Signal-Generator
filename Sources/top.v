@@ -9,8 +9,8 @@ module top(
     // SPI master facing signals
     input sclk,
     input cs_n,
-    output miso,
-    input mosi,
+    input miso,  // Testbench-ul trimite date pe aici (INPUT)
+    output mosi, // Testbench-ul asculta aici (OUTPUT)
     // peripheral signals
     output pwm_out
 );
@@ -49,8 +49,10 @@ spi_bridge i_spi_bridge (
     .rst_n(rst_n),
     .sclk(sclk),
     .cs_n(cs_n),
-    .miso(miso),
-    .mosi(mosi)
+    // --- CONEXIUNEA CRITICA ---
+    .mosi(miso), // Inputul 'miso' din top intra in 'mosi' la bridge
+    .miso(mosi), // Outputul 'miso' din bridge iese pe 'mosi' la top
+    // --------------------------
 );
 
 instr_dcd i_instr_dcd (
