@@ -54,16 +54,16 @@ module regs (
     // Write logic for all registers (sequential)
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            // THIS is the bulk pf 1.4 changes
-            period_reg     <= 16'h0020; // Perioada 32 (sa aiba ce numara)
-            counter_en_reg <= 1'b1;     // Pornim numaratorul direct din Reset
-            compare1_reg   <= 16'h000A; // Compare la 10
-            compare2_reg   <= 16'h0014; // Compare la 20
-            prescale_reg   <= 8'h00;    // Viteza maxima
-            upnotdown_reg  <= 1'b1;     // Numara in sus
-            pwm_en_reg     <= 1'b1;     // PWM Pornit
+            period_reg     <= 16'h0000;
+            counter_en_reg <= 1'b0;
+            compare1_reg   <= 16'h0000;
+            compare2_reg   <= 16'h0000;
+            prescale_reg   <= 8'h00;
+            upnotdown_reg  <= 1'b0;
+            pwm_en_reg     <= 1'b0;
             functions_reg  <= 2'b00;
-        end else if (write) begin
+        end
+        else if (write) begin
             case (addr)
                 6'h00: period_reg[7:0] <= data_write;       // PERIOD LSB
                 6'h01: period_reg[15:8] <= data_write;      // PERIOD MSB
